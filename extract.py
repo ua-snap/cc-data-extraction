@@ -52,43 +52,46 @@ def run_extraction(files, communities):
 
     month_temps = {}
     results = []
-    for community in communities.index:
-        month_temps[community] = {}
+    for community_name in communities.index:
+        month_temps[community_name] = {}
         for month in months:
-            month_temps[community][str(month)] = []
+            month_temps[community_name][str(month)] = []
 
     for result in combined:
-        community = result['community']
+        community_name = result['community']
         month = str(result['month'])
         temperature = result['temperature']
-        month_temps[community][month].append(temperature)
+        month_temps[community_name][month].append(temperature)
 
     for i in range(0, len(communities)):
+        community_name = communities.index[i]
+        community_dict = communities[i]
         row = {
-            'community': communities.index[i],
+            'community': community_name,
             'country': 'US',
             'resolution': '10min',
             'scenario': 'cru32',
             'daterange': 'Historical',
             'unit': 'C',
-            'latitude': communities[i]['orig']['lat'],
-            'longitude': communities[i]['orig']['lon'],
+            'latitude': community_dict['orig']['lat'],
+            'longitude': community_dict['orig']['lon'],
             'type': 'Temperature'
             
         }
+
         for month in months:
             month_abbr = datetime.datetime.strptime(str(month), "%m").strftime("%b").lower()
             month_label_min = month_abbr + 'Min'
             month_label_max = month_abbr + 'Max'
             month_label_mean = month_abbr + 'Mean'
             month_label_sd = month_abbr + 'Sd'
-            temps = month_temps[community][str(month)]
+            temps = month_temps[community_name][str(month)]
             row[month_label_min] = min(temps)
             row[month_label_max] = max(temps)
             row[month_label_mean] = round(sum(temps) / len(temps), 2)
             row[month_label_sd] = np.std(temps)
-            results.append(row)
 
+        results.append(row)
     return results
 
 def project(x):
