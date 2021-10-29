@@ -23,17 +23,17 @@ def extract_data(fn, communities):
     with rasterio.open(fn) as rst:
         arr = rst.read(1)
         data = []
-        for i in range(0, len(communities)):
-            name = communities.index[i]
-            x = communities[i]['rowcol']['row']
-            y = communities[i]['rowcol']['col']
+        for index, community in communities.iterrows():
+            rowcol = community.loc['rowcol']
+            row = rowcol['row']
+            col = rowcol['col']
             data.append({
-                'community': name,
+                'community': community['name'],
                 'month': month,
                 'year': year,
-                'temperature': arr[x][y]
+                'temperature': arr[row][col]
             })
-        return data
+    return data
 
 def run_extraction(files, communities):
     f = partial(extract_data, communities=communities)
@@ -52,10 +52,10 @@ def run_extraction(files, communities):
 
     month_temps = {}
     results = []
-    for community_name in communities.index:
-        month_temps[community_name] = {}
+    for index, community in communities.iterrows():
+        month_temps[community['name']] = {}
         for month in months:
-            month_temps[community_name][str(month)] = []
+            month_temps[community['name']][str(month)] = []
 
     for result in combined:
         community_name = result['community']
@@ -63,18 +63,16 @@ def run_extraction(files, communities):
         temperature = result['temperature']
         month_temps[community_name][month].append(temperature)
 
-    for i in range(0, len(communities)):
-        community_name = communities.index[i]
-        community_dict = communities[i]
+    for index, community in communities.iterrows():
         row = {
-            'community': community_name,
+            'community': community['name'],
             'country': 'US',
             'resolution': '10min',
             'scenario': 'cru32',
             'daterange': 'Historical',
             'unit': 'C',
-            'latitude': community_dict['orig']['lat'],
-            'longitude': community_dict['orig']['lon'],
+            'latitude': community.loc['orig']['lat'],
+            'longitude': community.loc['orig']['lon'],
             'type': 'Temperature'
             
         }
@@ -85,7 +83,7 @@ def run_extraction(files, communities):
             month_label_max = month_abbr + 'Max'
             month_label_mean = month_abbr + 'Mean'
             month_label_sd = month_abbr + 'Sd'
-            temps = month_temps[community_name][str(month)]
+            temps = month_temps[community['name']][str(month)]
             row[month_label_min] = min(temps)
             row[month_label_max] = max(temps)
             row[month_label_mean] = round(sum(temps) / len(temps), 2)
@@ -96,16 +94,15 @@ def run_extraction(files, communities):
 
 def project(x):
     point = pyproj.Proj('EPSG:4326')(x.longitude, x.latitude)
-    return {
-        'orig': {
-            'lat': x.latitude,
-            'lon': x.longitude
-        },
-        'proj': {
-            'lat': point[1],
-            'lon': point[0]
-        }
+    x['orig'] = {
+        'lat': x.latitude,
+        'lon': x.longitude
     }
+    x['proj'] = {
+        'lat': point[1],
+        'lon': point[0]
+    }
+    return x
 
 def transform(x):
     lat = x['proj']['lat']
@@ -121,8 +118,6 @@ if __name__ == '__main__':
     community_files = glob.glob(os.path.join('../geospatial-vector-veracity/vector_data/point/', '*.csv'))
     community_dfs = map(lambda x: pd.read_csv(x), community_files)
     communities_df = pd.concat(community_dfs)
-    communities_df.rename(columns={'name': 'community'}, inplace=True)
-    communities_df.index = communities_df['community'] 
 
     geotiff_files = glob.glob(os.path.join('tas/', '*.tif'))
 
@@ -130,7 +125,7 @@ if __name__ == '__main__':
     	meta = tmp.meta
 
     projected_pts = communities_df.apply(project, axis=1)
-    communities = projected_pts.apply(transform)
+    communities = projected_pts.apply(transform, axis=1)
 
     results = run_extraction(geotiff_files, communities)
 
