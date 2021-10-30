@@ -35,7 +35,7 @@ def extract_data(fn, communities):
             })
     return data
 
-def run_extraction(files, communities):
+def run_extraction(files, communities, type):
     f = partial(extract_data, communities=communities)
     pool = mp.Pool(8)
     extracted = pool.map(f, files)
@@ -70,7 +70,7 @@ def run_extraction(files, communities):
             'country': 'US',
             'latitude': community.loc['orig']['lat'],
             'longitude': community.loc['orig']['lon'],
-            'type': 'Temperature',
+            'type': type,
             'scenario': 'cru32',
             'resolution': '10min',
             'daterange': 'Historical',
@@ -120,18 +120,21 @@ if __name__ == '__main__':
     community_dfs = map(lambda x: pd.read_csv(x), community_files)
     communities_df = pd.concat(community_dfs)
 
-    geotiff_files = glob.glob(os.path.join('tas/', '*.tif'))
+    temp_geotiffs = glob.glob(os.path.join('tas/', '*.tif'))
+    precip_geotiffs = glob.glob(os.path.join('pr/', '*.tif'))
 
-    with rasterio.open(geotiff_files[0]) as tmp:
+    with rasterio.open(temp_geotiffs[0]) as tmp:
     	meta = tmp.meta
 
     projected_pts = communities_df.apply(project, axis=1)
     communities = projected_pts.apply(transform, axis=1)
 
-    results = run_extraction(geotiff_files, communities)
+    temp_results = run_extraction(temp_geotiffs, communities, 'Temperature')
+    precip_results = run_extraction(precip_geotiffs, communities, 'Precipitation')
+    combined_results = temp_results + precip_results
 
-    keys = results[0].keys()
-    with open('historical_temperatures.csv', 'w', newline='') as output_file:
+    keys = combined_results[0].keys()
+    with open('historical.csv', 'w', newline='') as output_file:
         dict_writer = csv.DictWriter(output_file, keys)
         dict_writer.writeheader()
-        dict_writer.writerows(results)
+        dict_writer.writerows(combined_results)
