@@ -28,7 +28,7 @@ def extract_data(fn, communities):
             row = rowcol['row']
             col = rowcol['col']
             data.append({
-                'community': community['name'],
+                'id': community['id'],
                 'month': month,
                 'year': year,
                 'temperature': arr[row][col]
@@ -53,15 +53,15 @@ def run_extraction(files, communities):
     month_temps = {}
     results = []
     for index, community in communities.iterrows():
-        month_temps[community['name']] = {}
+        month_temps[community['id']] = {}
         for month in months:
-            month_temps[community['name']][str(month)] = []
+            month_temps[community['id']][str(month)] = []
 
     for result in combined:
-        community_name = result['community']
+        community_id = result['id']
         month = str(result['month'])
         temperature = result['temperature']
-        month_temps[community_name][month].append(temperature)
+        month_temps[community_id][month].append(temperature)
 
     for index, community in communities.iterrows():
         row = {
@@ -83,7 +83,7 @@ def run_extraction(files, communities):
             month_label_max = month_abbr + 'Max'
             month_label_mean = month_abbr + 'Mean'
             month_label_sd = month_abbr + 'Sd'
-            temps = month_temps[community['name']][str(month)]
+            temps = month_temps[community['id']][str(month)]
             row[month_label_min] = min(temps)
             row[month_label_max] = max(temps)
             row[month_label_mean] = round(sum(temps) / len(temps), 2)
