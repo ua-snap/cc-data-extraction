@@ -68,13 +68,13 @@ def run_extraction(files, communities):
             'community': community['name'],
             'region': community['region'],
             'country': 'US',
-            'resolution': '10min',
-            'scenario': 'cru32',
-            'daterange': 'Historical',
-            'unit': 'C',
             'latitude': community.loc['orig']['lat'],
             'longitude': community.loc['orig']['lon'],
-            'type': 'Temperature'
+            'type': 'Temperature',
+            'scenario': 'cru32',
+            'resolution': '10min',
+            'daterange': 'Historical',
+            'unit': 'C'
             
         }
 
@@ -86,8 +86,8 @@ def run_extraction(files, communities):
             month_label_sd = month_abbr + 'Sd'
             temps = month_temps[community['id']][str(month)]
             row[month_label_min] = min(temps)
-            row[month_label_max] = max(temps)
             row[month_label_mean] = round(sum(temps) / len(temps), 1)
+            row[month_label_max] = max(temps)
             row[month_label_sd] = round(np.std(temps), 1)
 
         results.append(row)
