@@ -66,6 +66,7 @@ def run_extraction(files, communities):
     for index, community in communities.iterrows():
         row = {
             'community': community['name'],
+            'region': community['region'],
             'country': 'US',
             'resolution': '10min',
             'scenario': 'cru32',
