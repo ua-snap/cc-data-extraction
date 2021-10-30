@@ -86,8 +86,8 @@ def run_extraction(files, communities):
             temps = month_temps[community['id']][str(month)]
             row[month_label_min] = min(temps)
             row[month_label_max] = max(temps)
-            row[month_label_mean] = round(sum(temps) / len(temps), 2)
-            row[month_label_sd] = np.std(temps)
+            row[month_label_mean] = round(sum(temps) / len(temps), 1)
+            row[month_label_sd] = round(np.std(temps), 1)
 
         results.append(row)
     return results
