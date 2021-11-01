@@ -10,6 +10,9 @@ import os
 import multiprocessing as mp
 from functools import partial
 
+minYear = 1960
+maxYear = 1989
+
 def get_rowcol_from_point(x, y, transform):
     col, row = ~transform * (x, y)
     col, row = int(col), int(row)
@@ -20,6 +23,11 @@ def extract_data(fn, communities):
     fn_parts = fn_prefix.split('_')
     month = fn_parts[6].lstrip('0')
     year = fn_parts[7]
+    year_int = int(year)
+
+    if year_int < minYear or year_int > maxYear:
+        return []
+
     with rasterio.open(fn) as rst:
         arr = rst.read(1)
         data = []
@@ -75,7 +83,6 @@ def run_extraction(files, communities, type):
             'resolution': '10min',
             'daterange': 'Historical',
             'unit': 'C'
-            
         }
 
         for month in months:
