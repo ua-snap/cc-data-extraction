@@ -91,11 +91,11 @@ def run_extraction(files, communities, type):
             month_label_max = month_abbr + 'Max'
             month_label_mean = month_abbr + 'Mean'
             month_label_sd = month_abbr + 'Sd'
-            temps = month_temps[community['id']][str(month)]
-            row[month_label_min] = min(temps)
-            row[month_label_mean] = round(sum(temps) / len(temps), 1)
-            row[month_label_max] = max(temps)
-            row[month_label_sd] = round(np.std(temps), 1)
+            temps = np.array(month_temps[community['id']][str(month)])
+            row[month_label_min] = temps.min()
+            row[month_label_mean] = temps.mean().round(1)
+            row[month_label_max] = temps.max()
+            row[month_label_sd] = temps.std().round(1)
 
         results.append(row)
     return results
