@@ -33,13 +33,12 @@ def extract_data(fn, communities):
         data = []
         for index, community in communities.iterrows():
             rowcol = community.loc['rowcol']
-            row = rowcol['row']
-            col = rowcol['col']
+            temperature = get_closest_value(arr, rowcol)
             data.append({
                 'id': community['id'],
                 'month': month,
                 'year': year,
-                'temperature': arr[row][col]
+                'temperature': temperature
             })
     return data
 
@@ -121,6 +120,32 @@ def transform(x):
         'col': col
     }
     return x
+
+def get_closest_value(arr, rowcol):
+    row = rowcol['row']
+    col = rowcol['col']
+    value = arr[row][col]
+    offset_count = 0
+
+    while np.isclose(value, -3.40E+38):
+        offset_val = int(offset_count / 4 + 1)
+        offset_mod = offset_count % 4
+        offset_row = row
+        offset_col = col
+
+        if offset_mod == 0:
+            offset_row = row + offset_val
+        elif offset_mod == 1:
+            offset_row = row - offset_val
+        elif offset_mod == 2:
+            offset_col = col + offset_val
+        else:
+            offset_col = col - offset_val
+
+        value = arr[offset_row][offset_col]
+        offset_count += 1
+
+    return value
 
 if __name__ == '__main__':
     community_files = glob.glob(os.path.join('../geospatial-vector-veracity/vector_data/point/', '*.csv'))
