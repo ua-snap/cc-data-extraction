@@ -33,12 +33,12 @@ def extract_data(fn, communities):
         data = []
         for index, community in communities.iterrows():
             rowcol = community.loc['rowcol']
-            temperature = get_closest_value(arr, rowcol)
+            value = get_closest_value(arr, rowcol)
             data.append({
                 'id': community['id'],
                 'month': month,
                 'year': year,
-                'temperature': temperature
+                'value': value
             })
     return data
 
@@ -57,18 +57,18 @@ def run_extraction(files, communities, type):
     months = range(1, 13)
     years = set(map(lambda x: x['year'], combined))
 
-    month_temps = {}
+    month_values = {}
     results = []
     for index, community in communities.iterrows():
-        month_temps[community['id']] = {}
+        month_values[community['id']] = {}
         for month in months:
-            month_temps[community['id']][str(month)] = []
+            month_values[community['id']][str(month)] = []
 
     for result in combined:
         community_id = result['id']
         month = str(result['month'])
-        temperature = result['temperature']
-        month_temps[community_id][month].append(temperature)
+        value = result['value']
+        month_values[community_id][month].append(value)
 
     for index, community in communities.iterrows():
         row = {
@@ -90,7 +90,7 @@ def run_extraction(files, communities, type):
             month_label_max = month_abbr + 'Max'
             month_label_mean = month_abbr + 'Mean'
             month_label_sd = month_abbr + 'Sd'
-            temps = np.array(month_temps[community['id']][str(month)])
+            temps = np.array(month_values[community['id']][str(month)])
             row[month_label_min] = temps.min()
             row[month_label_mean] = temps.mean().round(1)
             row[month_label_max] = temps.max()
