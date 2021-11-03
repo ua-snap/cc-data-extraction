@@ -15,14 +15,13 @@ def get_rowcol_from_point(x, y, transform):
     col, row = int(col), int(row)
     return row, col
 
-def extract_data(fn, communities, years):
+def extract_data(fn, communities, daterange):
     fn_prefix = fn.split('.')[0]
     fn_parts = fn_prefix.split('_')
     month = fn_parts[6].lstrip('0')
-    year = fn_parts[7]
-    year_int = int(year)
+    year = int(fn_parts[7])
 
-    if year_int < years[0] or year_int > years[1]:
+    if year < daterange[0] or year > daterange[1]:
         return []
 
     with rasterio.open(fn) as rst:
@@ -33,14 +32,14 @@ def extract_data(fn, communities, years):
             data.append({
                 'id': community['id'],
                 'month': month,
-                'year': year,
+                'year': str(year),
                 'value': value
             })
 
     return data
 
-def run_extraction(files, communities, type, years):
-    f = partial(extract_data, communities=communities, years=years)
+def run_extraction(files, communities, scenario, resolution, type, daterange):
+    f = partial(extract_data, communities=communities, daterange=daterange)
     pool = mp.Pool(8)
     extracted = pool.map(f, files)
     pool.close()
@@ -75,11 +74,15 @@ def run_extraction(files, communities, type, years):
             'latitude': community.loc['orig']['lat'],
             'longitude': community.loc['orig']['lon'],
             'type': type,
-            'scenario': 'cru32',
-            'resolution': '10min',
-            'daterange': 'Historical',
+            'scenario': scenario,
+            'resolution': resolution,
             'unit': 'C'
         }
+
+        if daterange == [1960, 1989]:
+            row['daterange'] = 'Historical'
+        else:
+            row['daterange'] = '{0}-{1}'.format(daterange[0], daterange[1])
 
         for month in months:
             month_abbr = datetime.datetime.strptime(str(month), "%m").strftime("%b").lower()
@@ -94,7 +97,7 @@ def run_extraction(files, communities, type, years):
                 row[month_label_mean] = 'null'
                 row[month_label_max] = 'null'
                 row[month_label_sd] = 'null'
-            else:
+            elif len(values) > 0:
                 row[month_label_min] = values.min()
                 row[month_label_mean] = values.mean().round(1)
                 row[month_label_max] = values.max()
@@ -173,12 +176,12 @@ def get_closest_value(arr, community):
 
     return value
 
-def process_dataset(communities, geotiffs, type, years, projection):
+def process_dataset(communities, geotiffs, scenario, resolution, type, daterange, projection):
     with rasterio.open(geotiffs[0]) as tmp:
     	meta = tmp.meta
     communities = communities.apply(project, projection=projection, axis=1)
     communities = communities.apply(transform, meta=meta, axis=1)
-    return run_extraction(geotiffs, communities, type, years)
+    return run_extraction(geotiffs, communities, scenario, resolution, type, daterange)
 
 if __name__ == '__main__':
     alaska = pd.read_csv('../geospatial-vector-veracity/vector_data/point/alaska_point_locations.csv')
@@ -192,12 +195,12 @@ if __name__ == '__main__':
     cru_communities = pd.concat([alaska, alberta, british_columbia, manitoba, nwt, saskatchewan, yukon])
     cru_temp_geotiffs = glob.glob(os.path.join('tas/', '*.tif'))
     cru_precip_geotiffs = glob.glob(os.path.join('pr/', '*.tif'))
-    cru_temp_results = process_dataset(cru_communities, cru_temp_geotiffs, 'Temperature', range(1960, 1990), 'EPSG:4326')
-    cru_precip_results = process_dataset(cru_communities, cru_precip_geotiffs, 'Precipitation', range(1960, 1990), 'EPSG:4326')
+    cru_temp_results = process_dataset(cru_communities, cru_temp_geotiffs, 'cru32', '10min', 'Temperature', [1960, 1989], 'EPSG:4326')
+    cru_precip_results = process_dataset(cru_communities, cru_precip_geotiffs, 'cru32', '10min', 'Precipitation', [1960, 1989], 'EPSG:4326')
 
     rcp45_communities = alaska
     rcp45_geotiffs = glob.glob(os.path.join('rcp45/', '*.tif'))
-    rcp45_temp_results = process_dataset(rcp45_communities, rcp45_geotiffs, 'Temperature', range(2040, 2050), 'EPSG:3338')
+    rcp45_temp_results = process_dataset(rcp45_communities, rcp45_geotiffs, 'rcp45', '2km', 'Temperature', [2040, 2049], 'EPSG:3338')
 
     combined_results = cru_temp_results + cru_precip_results + rcp45_temp_results
 
