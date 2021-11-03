@@ -192,17 +192,80 @@ if __name__ == '__main__':
     saskatchewan = pd.read_csv('../geospatial-vector-veracity/vector_data/point/saskatchewan_point_locations.csv')
     yukon = pd.read_csv('../geospatial-vector-veracity/vector_data/point/yukon_point_locations.csv')
 
-    cru_communities = pd.concat([alaska, alberta, british_columbia, manitoba, nwt, saskatchewan, yukon])
-    cru_temp_geotiffs = glob.glob(os.path.join('tas/', '*.tif'))
-    cru_precip_geotiffs = glob.glob(os.path.join('pr/', '*.tif'))
-    cru_temp_results = process_dataset(cru_communities, cru_temp_geotiffs, 'cru32', '10min', 'Temperature', [1960, 1989], 'EPSG:4326')
-    cru_precip_results = process_dataset(cru_communities, cru_precip_geotiffs, 'cru32', '10min', 'Precipitation', [1960, 1989], 'EPSG:4326')
+    scenarios_lu = [
+        'cru32',
+        'rcp45',
+        'rcp60',
+        'rcp85'
+    ]
 
-    rcp45_communities = alaska
-    rcp45_geotiffs = glob.glob(os.path.join('rcp45/', '*.tif'))
-    rcp45_temp_results = process_dataset(rcp45_communities, rcp45_geotiffs, 'rcp45', '2km', 'Temperature', [2040, 2049], 'EPSG:3338')
+    communities_lu = {
+        'cru32': pd.concat([
+            alaska,
+            alberta,
+            british_columbia,
+            manitoba,
+            nwt,
+            saskatchewan,
+            yukon
+        ]),
+        'rcp45': alaska,
+        'rcp60': alaska,
+        'rcp85': alaska
+    }
 
-    combined_results = cru_temp_results + cru_precip_results + rcp45_temp_results
+    types_lu = {
+        'tas': 'Temperature',
+        'pr': 'Precipitation'
+    }
+
+    resolutions_lu = {
+        'cru32': '10min',
+        'rcp45': '2km',
+        'rcp60': '2km',
+        'rcp85': '2km'
+    }
+
+    dateranges_lu = {
+        'cru32': [
+            [1960, 1989]
+        ],
+        'rcp45': [
+            [2040, 2049],
+            [2060, 2069],
+            [2090, 2099]
+        ],
+        'rcp60': [
+            [2040, 2049],
+            [2060, 2069],
+            [2090, 2099]
+        ],
+        'rcp85': [
+            [2040, 2049],
+            [2060, 2069],
+            [2090, 2099]
+        ]
+    }
+
+    projections_lu = {
+        'cru32': 'EPSG:4326',
+        'rcp45': 'EPSG:3338',
+        'rcp60': 'EPSG:3338',
+        'rcp85': 'EPSG:3338'
+    }
+
+    combined_results = []
+    for scenario in scenarios_lu:
+        for type in types_lu.keys():
+            path = '{0}/{1}/'.format(scenario, type)
+            geotiffs = glob.glob(os.path.join(path, '*.tif'))
+            communities = communities_lu[scenario]
+            resolution = resolutions_lu[scenario]
+            type_label = types_lu[type]
+            projection = projections_lu[scenario]
+            for daterange in dateranges_lu[scenario]:
+                results = process_dataset(communities, geotiffs, scenario, resolution, type_label, daterange, projection)
+                combined_results += results
 
     keys = combined_results[0].keys()
     with open('data.csv', 'w', newline='') as output_file:
