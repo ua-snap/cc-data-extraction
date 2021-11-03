@@ -125,25 +125,34 @@ def get_closest_value(arr, rowcol):
     row = rowcol['row']
     col = rowcol['col']
     value = arr[row][col]
-    offset_count = 0
+    grid = np.full((857, 2160), False, dtype=bool)
+    grid[row][col] = True
+    distance = 0
 
+    # Check points around perimeter of previously checked points.
+    # TODO: Ignore the innermost set of checked points to optimize considerably.
     while np.isclose(value, -3.40E+38):
-        offset_val = int(offset_count / 4 + 1)
-        offset_mod = offset_count % 4
-        offset_row = row
-        offset_col = col
+        distance += 1
+        checked_points = np.argwhere(grid == True)
+        for point in checked_points:
+            for direction in range(4):
+                offset_row = point[0]
+                offset_col = point[1]
 
-        if offset_mod == 0:
-            offset_row = row + offset_val
-        elif offset_mod == 1:
-            offset_row = row - offset_val
-        elif offset_mod == 2:
-            offset_col = col + offset_val
-        else:
-            offset_col = col - offset_val
+                if direction == 0:
+                    offset_row += 1
+                elif direction == 1:
+                    offset_row -= 1
+                elif direction == 2:
+                    offset_col += 1
+                elif direction == 3:
+                    offset_col -= 1
 
-        value = arr[offset_row][offset_col]
-        offset_count += 1
+                grid[offset_row, offset_col] = True
+                value = arr[offset_row][offset_col]
+
+                if not np.isclose(value, -3.40E+38):
+                    return value
 
     return value
 
