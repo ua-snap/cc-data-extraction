@@ -74,7 +74,7 @@ def run_extraction(files, communities, type):
         row = {
             'community': community['name'],
             'region': community['region'],
-            'country': 'US',
+            'country': community['country'],
             'latitude': community.loc['orig']['lat'],
             'longitude': community.loc['orig']['lon'],
             'type': type,
