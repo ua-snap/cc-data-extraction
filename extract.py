@@ -10,40 +10,37 @@ import os
 import multiprocessing as mp
 from functools import partial
 
-minYear = 1960
-maxYear = 1989
-
 def get_rowcol_from_point(x, y, transform):
     col, row = ~transform * (x, y)
     col, row = int(col), int(row)
     return row, col
 
-def extract_data(fn, communities):
+def extract_data(fn, communities, years):
     fn_prefix = fn.split('.')[0]
     fn_parts = fn_prefix.split('_')
     month = fn_parts[6].lstrip('0')
     year = fn_parts[7]
     year_int = int(year)
 
-    if year_int < minYear or year_int > maxYear:
+    if year_int < years[0] or year_int > years[1]:
         return []
 
     with rasterio.open(fn) as rst:
         arr = rst.read(1)
         data = []
         for index, community in communities.iterrows():
-            rowcol = community.loc['rowcol']
-            value = get_closest_value(arr, rowcol)
+            value = get_closest_value(arr, community)
             data.append({
                 'id': community['id'],
                 'month': month,
                 'year': year,
                 'value': value
             })
+
     return data
 
-def run_extraction(files, communities, type):
-    f = partial(extract_data, communities=communities)
+def run_extraction(files, communities, type, years):
+    f = partial(extract_data, communities=communities, years=years)
     pool = mp.Pool(8)
     extracted = pool.map(f, files)
     pool.close()
@@ -99,8 +96,8 @@ def run_extraction(files, communities, type):
         results.append(row)
     return results
 
-def project(x):
-    point = pyproj.Proj('EPSG:4326')(x.longitude, x.latitude)
+def project(x, projection):
+    point = pyproj.Proj(projection)(x.longitude, x.latitude)
     x['orig'] = {
         'lat': x.latitude,
         'lon': x.longitude
@@ -111,7 +108,7 @@ def project(x):
     }
     return x
 
-def transform(x):
+def transform(x, meta):
     lat = x['proj']['lat']
     lon = x['proj']['lon']
     row, col = get_rowcol_from_point(lon, lat, transform=meta['transform'])
@@ -121,19 +118,28 @@ def transform(x):
     }
     return x
 
-def get_closest_value(arr, rowcol):
+def get_closest_value(arr, community):
+    rowcol = community.loc['rowcol']
     row = rowcol['row']
     col = rowcol['col']
     value = arr[row][col]
-    grid = np.full((857, 2160), False, dtype=bool)
-    grid[row][col] = True
     distance = 0
+
+    checked = {}
+    checked[row] = {}
+    checked[row][col] = True
 
     # Check points around perimeter of previously checked points.
     # TODO: Ignore the innermost set of checked points to optimize considerably.
     while np.isclose(value, -3.40E+38):
         distance += 1
-        checked_points = np.argwhere(grid == True)
+
+        checked_points = []
+        for row in checked.keys():
+            for col in checked[row].keys():
+                if checked[row][col] == True:
+                    checked_points.append([row, col])
+
         for point in checked_points:
             for direction in range(4):
                 offset_row = point[0]
@@ -148,34 +154,46 @@ def get_closest_value(arr, rowcol):
                 elif direction == 3:
                     offset_col -= 1
 
-                grid[offset_row, offset_col] = True
-                value = arr[offset_row][offset_col]
+                if offset_row not in checked:
+                    checked[offset_row] = {}
+                checked[offset_row][offset_col] = True
 
+                value = arr[offset_row][offset_col]
                 if not np.isclose(value, -3.40E+38):
                     return value
 
     return value
 
-if __name__ == '__main__':
-    community_files = glob.glob(os.path.join('../geospatial-vector-veracity/vector_data/point/', '*.csv'))
-    community_dfs = map(lambda x: pd.read_csv(x), community_files)
-    communities_df = pd.concat(community_dfs)
-
-    temp_geotiffs = glob.glob(os.path.join('tas/', '*.tif'))
-    precip_geotiffs = glob.glob(os.path.join('pr/', '*.tif'))
-
-    with rasterio.open(temp_geotiffs[0]) as tmp:
+def process_dataset(communities, geotiffs, type, years, projection):
+    with rasterio.open(geotiffs[0]) as tmp:
     	meta = tmp.meta
+    communities = communities.apply(project, projection=projection, axis=1)
+    communities = communities.apply(transform, meta=meta, axis=1)
+    return run_extraction(geotiffs, communities, type, years)
 
-    projected_pts = communities_df.apply(project, axis=1)
-    communities = projected_pts.apply(transform, axis=1)
+if __name__ == '__main__':
+    alaska = pd.read_csv('../geospatial-vector-veracity/vector_data/point/alaska_point_locations.csv')
+    alberta = pd.read_csv('../geospatial-vector-veracity/vector_data/point/alberta_point_locations.csv')
+    british_columbia = pd.read_csv('../geospatial-vector-veracity/vector_data/point/british_columbia_point_locations.csv')
+    manitoba = pd.read_csv('../geospatial-vector-veracity/vector_data/point/manitoba_point_locations.csv')
+    nwt = pd.read_csv('../geospatial-vector-veracity/vector_data/point/northwest_territories_point_locations.csv')
+    saskatchewan = pd.read_csv('../geospatial-vector-veracity/vector_data/point/saskatchewan_point_locations.csv')
+    yukon = pd.read_csv('../geospatial-vector-veracity/vector_data/point/yukon_point_locations.csv')
 
-    temp_results = run_extraction(temp_geotiffs, communities, 'Temperature')
-    precip_results = run_extraction(precip_geotiffs, communities, 'Precipitation')
-    combined_results = temp_results + precip_results
+    cru_communities = pd.concat([alaska, alberta, british_columbia, manitoba, nwt, saskatchewan, yukon])
+    cru_temp_geotiffs = glob.glob(os.path.join('tas/', '*.tif'))
+    cru_precip_geotiffs = glob.glob(os.path.join('pr/', '*.tif'))
+    cru_temp_results = process_dataset(cru_communities, cru_temp_geotiffs, 'Temperature', range(1960, 1990), 'EPSG:4326')
+    cru_precip_results = process_dataset(cru_communities, cru_precip_geotiffs, 'Precipitation', range(1960, 1990), 'EPSG:4326')
+
+    rcp45_communities = alaska
+    rcp45_geotiffs = glob.glob(os.path.join('rcp45/', '*.tif'))
+    rcp45_temp_results = process_dataset(rcp45_communities, rcp45_geotiffs, 'Temperature', range(2040, 2050), 'EPSG:3338')
+
+    combined_results = cru_temp_results + cru_precip_results + rcp45_temp_results
 
     keys = combined_results[0].keys()
-    with open('historical.csv', 'w', newline='') as output_file:
+    with open('data.csv', 'w', newline='') as output_file:
         dict_writer = csv.DictWriter(output_file, keys)
         dict_writer.writeheader()
         dict_writer.writerows(combined_results)
