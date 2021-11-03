@@ -87,18 +87,18 @@ def run_extraction(files, communities, type, years):
             month_label_max = month_abbr + 'Max'
             month_label_mean = month_abbr + 'Mean'
             month_label_sd = month_abbr + 'Sd'
-            temps = np.array(month_values[community['id']][str(month)])
+            values = np.array(month_values[community['id']][str(month)])
 
-            if None in temps:
+            if None in values:
                 row[month_label_min] = 'null'
                 row[month_label_mean] = 'null'
                 row[month_label_max] = 'null'
                 row[month_label_sd] = 'null'
             else:
-                row[month_label_min] = temps.min()
-                row[month_label_mean] = temps.mean().round(1)
-                row[month_label_max] = temps.max()
-                row[month_label_sd] = temps.std().round(1)
+                row[month_label_min] = values.min()
+                row[month_label_mean] = values.mean().round(1)
+                row[month_label_max] = values.max()
+                row[month_label_sd] = values.std().round(1)
 
         results.append(row)
     return results
