@@ -88,10 +88,17 @@ def run_extraction(files, communities, type, years):
             month_label_mean = month_abbr + 'Mean'
             month_label_sd = month_abbr + 'Sd'
             temps = np.array(month_values[community['id']][str(month)])
-            row[month_label_min] = temps.min()
-            row[month_label_mean] = temps.mean().round(1)
-            row[month_label_max] = temps.max()
-            row[month_label_sd] = temps.std().round(1)
+
+            if None in temps:
+                row[month_label_min] = 'null'
+                row[month_label_mean] = 'null'
+                row[month_label_max] = 'null'
+                row[month_label_sd] = 'null'
+            else:
+                row[month_label_min] = temps.min()
+                row[month_label_mean] = temps.mean().round(1)
+                row[month_label_max] = temps.max()
+                row[month_label_sd] = temps.std().round(1)
 
         results.append(row)
     return results
@@ -133,6 +140,8 @@ def get_closest_value(arr, community):
     # TODO: Ignore the innermost set of checked points to optimize considerably.
     while np.isclose(value, -3.40E+38):
         distance += 1
+        if distance > 8:
+            return None
 
         checked_points = []
         for row in checked.keys():
