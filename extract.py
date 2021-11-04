@@ -119,14 +119,16 @@ def project(x, projection):
     }
     return x
 
-def transform(x, meta):
+def transform(x, meta, rowcol_offset):
     lat = x['proj']['lat']
     lon = x['proj']['lon']
     row, col = get_rowcol_from_point(lon, lat, transform=meta['transform'])
+
     x['rowcol'] = {
-        'row': row,
-        'col': col
+        'row': row + rowcol_offset,
+        'col': col + rowcol_offset
     }
+
     return x
 
 def get_closest_value(arr, community):
@@ -181,7 +183,13 @@ def process_dataset(communities, geotiffs, scenario, resolution, type, daterange
     with rasterio.open(geotiffs[0]) as tmp:
     	meta = tmp.meta
     communities = communities.apply(project, projection=projection, axis=1)
-    communities = communities.apply(transform, meta=meta, axis=1)
+
+    rowcol_offset = 0
+    if scenario in ['rcp45', 'rcp60', 'rcp85']:
+        if resolution == '10min':
+            rowcol_offset = -1
+
+    communities = communities.apply(transform, meta=meta, rowcol_offset=rowcol_offset, axis=1)
     return run_extraction(geotiffs, communities, scenario, resolution, type, daterange)
 
 if __name__ == '__main__':
@@ -193,6 +201,16 @@ if __name__ == '__main__':
     saskatchewan = pd.read_csv('../geospatial-vector-veracity/vector_data/point/saskatchewan_point_locations.csv')
     yukon = pd.read_csv('../geospatial-vector-veracity/vector_data/point/yukon_point_locations.csv')
 
+    all_locations = pd.concat([
+        alaska,
+        alberta,
+        british_columbia,
+        manitoba,
+        nwt,
+        saskatchewan,
+        yukon
+    ])
+
     scenarios_lu = [
         'cru32',
         'prism',
@@ -202,19 +220,11 @@ if __name__ == '__main__':
     ]
 
     communities_lu = {
-        'cru32': pd.concat([
-            alaska,
-            alberta,
-            british_columbia,
-            manitoba,
-            nwt,
-            saskatchewan,
-            yukon
-        ]),
+        'cru32': all_locations,
         'prism': alaska,
-        'rcp45': alaska,
-        'rcp60': alaska,
-        'rcp85': alaska
+        'rcp45': all_locations,
+        'rcp60': all_locations,
+        'rcp85': all_locations
     }
 
     types_lu = {
