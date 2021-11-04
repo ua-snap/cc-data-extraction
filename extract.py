@@ -285,7 +285,6 @@ if __name__ == '__main__':
         'rcp85': 'EPSG:3338'
     }
 
-    combined_results = []
     for scenario in scenarios_lu:
         for type in types_lu.keys():
             for resolution in resolutions_lu[scenario]:
@@ -296,10 +295,8 @@ if __name__ == '__main__':
                 projection = projections_lu[scenario]
                 for daterange in dateranges_lu[scenario]:
                     results = process_dataset(communities, geotiffs, scenario, resolution, type_label, daterange, projection)
-                    combined_results += results
-
-    keys = combined_results[0].keys()
-    with open('data.csv', 'w', newline='') as output_file:
-        dict_writer = csv.DictWriter(output_file, keys)
-        dict_writer.writeheader()
-        dict_writer.writerows(combined_results)
+                    keys = results[0].keys()
+                    with open('data.csv', 'a', newline='') as output_file:
+                        dict_writer = csv.DictWriter(output_file, keys)
+                        dict_writer.writeheader()
+                        dict_writer.writerows(results)
