@@ -183,7 +183,7 @@ def get_closest_value(arr, community):
 
     return value
 
-def process_dataset(communities, geotiffs, scenario, resolution, type, daterange, projection):
+def process_dataset(scenario, resolution, type_label, daterange, geotiffs, communities, projection):
     with rasterio.open(geotiffs[0]) as tmp:
     	meta = tmp.meta
     communities = communities.apply(project, projection=projection, axis=1)
@@ -196,29 +196,42 @@ def process_dataset(communities, geotiffs, scenario, resolution, type, daterange
     communities = communities.apply(transform, meta=meta, rowcol_offset=rowcol_offset, axis=1)
     return run_extraction(geotiffs, communities, scenario, resolution, type, daterange)
 
-if __name__ == '__main__':
+def process_scenarios(scenarios):
     for scenario in luts.scenarios_lu:
-        for type in luts.types_lu.keys():
-            for resolution in luts.resolutions_lu[scenario]:
-                path = '{0}/{1}/{2}/'.format(scenario, resolution, type)
-                geotiffs = glob.glob(os.path.join(path, '*.tif'))
-                communities = luts.communities_lu[scenario]
-                type_label = luts.types_lu[type]
-                projection = luts.projections_lu[scenario]
-                for daterange in luts.dateranges_lu[scenario]:
-                    results = process_dataset(communities, geotiffs, scenario, resolution, type_label, daterange, projection)
-                    keys = results[0].keys()
-                    with open('data.csv', 'a', newline='') as output_file:
-                        dict_writer = csv.DictWriter(output_file, keys)
-                        dict_writer.writeheader()
-                        dict_writer.writerows(results)
+        process_resolutions(scenario, luts.resolutions_lu[scenario])
 
-                    log_vars = [
-                        scenario,
-                        resolution,
-                        type,
-                        daterange[0],
-                        daterange[1]
-                    ]
+def process_resolutions(scenario, resolutions):
+    for resolution in resolutions:
+        process_types(scenario, resolution, luts.types_lu)
 
-                    logging.info('Complete: {0}/{1}/{2}/{3}-{4}'.format(*log_vars))
+def process_types(scenario, resolution, types):
+    for type in types:
+        path = '{0}/{1}/{2}/'.format(scenario, resolution, type)
+        geotiffs = glob.glob(os.path.join(path, '*.tif'))
+        projection = luts.projections_lu[scenario]
+        type_label = luts.types_lu[type]
+        process_dateranges(scenario, resolution, type, type_label, luts.dateranges_lu[scenario], geotiffs)
+
+def process_dateranges(scenario, resolution, type, type_label, dateranges, geotiffs):
+    communities = luts.communities_lu[scenario]
+    projection = luts.projections_lu[scenario]
+    for daterange in dateranges:
+        results = process_dataset(scenario, resolution, type_label, daterange, geotiffs, communities, projection)
+        keys = results[0].keys()
+        with open('data.csv', 'a', newline='') as output_file:
+            dict_writer = csv.DictWriter(output_file, keys)
+            dict_writer.writeheader()
+            dict_writer.writerows(results)
+
+        log_vars = [
+            scenario,
+            resolution,
+            type,
+            daterange[0],
+            daterange[1]
+        ]
+
+        logging.info('Complete: {0}/{1}/{2}/{3}-{4}'.format(*log_vars))
+
+if __name__ == '__main__':
+    process_scenarios(luts.scenarios_lu)
