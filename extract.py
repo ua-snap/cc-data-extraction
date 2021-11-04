@@ -7,8 +7,11 @@ import datetime
 import csv
 import glob
 import os
+import logging
 import multiprocessing as mp
 from functools import partial
+
+logging.basicConfig(level=logging.INFO)
 
 def get_rowcol_from_point(x, y, transform):
     col, row = ~transform * (x, y)
@@ -300,3 +303,13 @@ if __name__ == '__main__':
                         dict_writer = csv.DictWriter(output_file, keys)
                         dict_writer.writeheader()
                         dict_writer.writerows(results)
+
+                    log_vars = [
+                        scenario,
+                        resolution,
+                        type,
+                        daterange[0],
+                        daterange[1]
+                    ]
+
+                    logging.info('Complete: {0}/{1}/{2}/{3}-{4}'.format(*log_vars))
