@@ -223,11 +223,24 @@ if __name__ == '__main__':
     }
 
     resolutions_lu = {
-        'cru32': '10min',
-        'prism': '2km',
-        'rcp45': '2km',
-        'rcp60': '2km',
-        'rcp85': '2km'
+        'cru32': [
+            '10min'
+        ],
+        'prism': [
+            '2km'
+        ],
+        'rcp45': [
+            '2km',
+            '10min'
+        ],
+        'rcp60': [
+            '2km',
+            '10min'
+        ],
+        'rcp85': [
+            '2km',
+            '10min'
+        ],
     }
 
     dateranges_lu = {
@@ -265,15 +278,15 @@ if __name__ == '__main__':
     combined_results = []
     for scenario in scenarios_lu:
         for type in types_lu.keys():
-            path = '{0}/{1}/'.format(scenario, type)
-            geotiffs = glob.glob(os.path.join(path, '*.tif'))
-            communities = communities_lu[scenario]
-            resolution = resolutions_lu[scenario]
-            type_label = types_lu[type]
-            projection = projections_lu[scenario]
-            for daterange in dateranges_lu[scenario]:
-                results = process_dataset(communities, geotiffs, scenario, resolution, type_label, daterange, projection)
-                combined_results += results
+            for resolution in resolutions_lu[scenario]:
+                path = '{0}/{1}/{2}/'.format(scenario, resolution, type)
+                geotiffs = glob.glob(os.path.join(path, '*.tif'))
+                communities = communities_lu[scenario]
+                type_label = types_lu[type]
+                projection = projections_lu[scenario]
+                for daterange in dateranges_lu[scenario]:
+                    results = process_dataset(communities, geotiffs, scenario, resolution, type_label, daterange, projection)
+                    combined_results += results
 
     keys = combined_results[0].keys()
     with open('data.csv', 'w', newline='') as output_file:
