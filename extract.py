@@ -15,14 +15,17 @@ def get_rowcol_from_point(x, y, transform):
     col, row = int(col), int(row)
     return row, col
 
-def extract_data(fn, communities, daterange):
+def extract_data(fn, communities, scenario, daterange):
     fn_prefix = fn.split('.')[0]
     fn_parts = fn_prefix.split('_')
-    month = fn_parts[6].lstrip('0')
-    year = int(fn_parts[7])
 
-    if year < daterange[0] or year > daterange[1]:
-        return []
+    if scenario == 'prism':
+        month = fn_parts[5].lstrip('0')
+    else:
+        month = fn_parts[6].lstrip('0')
+        year = int(fn_parts[7])
+        if year < daterange[0] or year > daterange[1]:
+            return []
 
     with rasterio.open(fn) as rst:
         arr = rst.read(1)
@@ -32,14 +35,13 @@ def extract_data(fn, communities, daterange):
             data.append({
                 'id': community['id'],
                 'month': month,
-                'year': str(year),
                 'value': value
             })
 
     return data
 
 def run_extraction(files, communities, scenario, resolution, type, daterange):
-    f = partial(extract_data, communities=communities, daterange=daterange)
+    f = partial(extract_data, communities=communities, scenario=scenario, daterange=daterange)
     pool = mp.Pool(8)
     extracted = pool.map(f, files)
     pool.close()
@@ -51,7 +53,6 @@ def run_extraction(files, communities, scenario, resolution, type, daterange):
         combined += result
 
     months = range(1, 13)
-    years = set(map(lambda x: x['year'], combined))
 
     month_values = {}
     results = []
@@ -79,7 +80,7 @@ def run_extraction(files, communities, scenario, resolution, type, daterange):
             'unit': 'C'
         }
 
-        if daterange == [1960, 1989]:
+        if scenario in ['cru32', 'prism']:
             row['daterange'] = 'Historical'
         else:
             row['daterange'] = '{0}-{1}'.format(daterange[0], daterange[1])
@@ -141,7 +142,7 @@ def get_closest_value(arr, community):
 
     # Check points around perimeter of previously checked points.
     # TODO: Ignore the innermost set of checked points to optimize considerably.
-    while np.isclose(value, -3.40E+38):
+    while np.isclose(value, -3.40E+38) or np.isclose(value, -9999.0):
         distance += 1
         if distance > 8:
             return None
@@ -171,7 +172,7 @@ def get_closest_value(arr, community):
                 checked[offset_row][offset_col] = True
 
                 value = arr[offset_row][offset_col]
-                if not np.isclose(value, -3.40E+38):
+                if not np.isclose(value, -3.40E+38) and not np.isclose(value, -9999.0):
                     return value
 
     return value
@@ -194,6 +195,7 @@ if __name__ == '__main__':
 
     scenarios_lu = [
         'cru32',
+        'prism',
         'rcp45',
         'rcp60',
         'rcp85'
@@ -209,6 +211,7 @@ if __name__ == '__main__':
             saskatchewan,
             yukon
         ]),
+        'prism': alaska,
         'rcp45': alaska,
         'rcp60': alaska,
         'rcp85': alaska
@@ -221,6 +224,7 @@ if __name__ == '__main__':
 
     resolutions_lu = {
         'cru32': '10min',
+        'prism': '2km',
         'rcp45': '2km',
         'rcp60': '2km',
         'rcp85': '2km'
@@ -229,6 +233,9 @@ if __name__ == '__main__':
     dateranges_lu = {
         'cru32': [
             [1960, 1989]
+        ],
+        'prism': [
+            [1961, 1990]
         ],
         'rcp45': [
             [2040, 2049],
@@ -249,6 +256,7 @@ if __name__ == '__main__':
 
     projections_lu = {
         'cru32': 'EPSG:4326',
+        'prism': 'EPSG:3338',
         'rcp45': 'EPSG:3338',
         'rcp60': 'EPSG:3338',
         'rcp85': 'EPSG:3338'
