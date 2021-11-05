@@ -5,8 +5,10 @@ import numpy as np
 import pyproj
 import datetime
 import csv
+import json
 import glob
 import os
+import os.path
 import logging
 import multiprocessing as mp
 from functools import partial
@@ -73,6 +75,7 @@ def run_extraction(files, communities, scenario, resolution, type, daterange):
 
     for index, community in communities.iterrows():
         row = {
+            'id': community['id'],
             'community': community['name'],
             'region': community['region'],
             'country': community['country'],
@@ -194,7 +197,7 @@ def process_dataset(scenario, resolution, type_label, daterange, geotiffs, commu
             rowcol_offset = -1
 
     communities = communities.apply(transform, meta=meta, rowcol_offset=rowcol_offset, axis=1)
-    return run_extraction(geotiffs, communities, scenario, resolution, type, daterange)
+    return run_extraction(geotiffs, communities, scenario, resolution, type_label, daterange)
 
 def process_scenarios(scenarios):
     for scenario in luts.scenarios_lu:
@@ -212,16 +215,33 @@ def process_types(scenario, resolution, types):
         type_label = luts.types_lu[type]
         process_dateranges(scenario, resolution, type, type_label, luts.dateranges_lu[scenario], geotiffs)
 
+def create_csv(filename, keys):
+    with open(filename, 'a', newline='') as output_file:
+        dict_writer = csv.DictWriter(output_file, keys)
+        dict_writer.writeheader()
+        output_file.close()
+
 def process_dateranges(scenario, resolution, type, type_label, dateranges, geotiffs):
     communities = luts.communities_lu[scenario]
     projection = luts.projections_lu[scenario]
     for daterange in dateranges:
         results = process_dataset(scenario, resolution, type_label, daterange, geotiffs, communities, projection)
         keys = results[0].keys()
-        with open('data.csv', 'a', newline='') as output_file:
-            dict_writer = csv.DictWriter(output_file, keys)
-            dict_writer.writeheader()
-            dict_writer.writerows(results)
+
+        for index, community in communities.iterrows():
+            filename = 'data/' + community['id'] + '.csv'
+            if not os.path.exists(filename):
+                create_csv(filename, keys)
+
+            data = []
+            for result in results:
+                if result['id'] == community['id']:
+                    data.append(result)
+
+            with open(filename, 'a', newline='') as output_file:
+                dict_writer = csv.DictWriter(output_file, keys)
+                dict_writer.writerows(data)
+                output_file.close()
 
         log_vars = [
             scenario,
@@ -234,4 +254,19 @@ def process_dateranges(scenario, resolution, type, type_label, dateranges, geoti
         logging.info('Complete: {0}/{1}/{2}/{3}-{4}'.format(*log_vars))
 
 if __name__ == '__main__':
+    locations = luts.all_locations
+    communities = []
+    for index, location in locations.iterrows():
+        communities.append({
+            'id': location['id'],
+            'name': location['name'] + ', ' + location['region']
+        })
+
+    # Output the file used to populate the web app community selector dropdown.
+    community_file = open('CommunityNames.json', 'w')
+    json.dump(communities, community_file)
+    community_file.close()
+
+    # Process each scenario with its resolution, type, and daterang permutations
+    # specified in the luts.py file.
     process_scenarios(luts.scenarios_lu)
