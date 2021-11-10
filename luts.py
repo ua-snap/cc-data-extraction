@@ -18,6 +18,15 @@ all_locations = pd.concat([
     yukon
 ])
 
+non_nwt_locations = pd.concat([
+    alaska,
+    alberta,
+    british_columbia,
+    manitoba,
+    saskatchewan,
+    yukon
+])
+
 scenarios_lu = [
     'cru32',
     'prism',
@@ -28,7 +37,7 @@ scenarios_lu = [
 
 communities_lu = {
     'cru32': all_locations,
-    'prism': alaska,
+    'prism': non_nwt_locations,
     'rcp45': all_locations,
     'rcp60': all_locations,
     'rcp85': all_locations
@@ -90,4 +99,12 @@ projections_lu = {
     'rcp45': 'EPSG:3338',
     'rcp60': 'EPSG:3338',
     'rcp85': 'EPSG:3338'
+}
+
+min_max_lu = {
+    'cru32': False,
+    'prism': False,
+    'rcp45': True,
+    'rcp60': True,
+    'rcp85': True
 }

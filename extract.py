@@ -7,6 +7,7 @@ import datetime
 import csv
 import json
 import glob
+import re
 import os
 import os.path
 import logging
@@ -21,19 +22,26 @@ def get_rowcol_from_point(x, y, transform):
     col, row = int(col), int(row)
     return row, col
 
-def extract_data(fn, communities, scenario, daterange):
-    fn_prefix = fn.split('.')[0]
-    fn_parts = fn_prefix.split('_')
+def extract_data(filepath, communities, scenario, daterange):
+    filename = filepath.split('/')[-1]
+    filename_prefix = filename.split('.')[0]
+    filename_parts = filename_prefix.split('_')
+    matches = re.search(r'(min|max)', filename_parts[0])
+
+    if matches == None:
+        stat = 'mean'
+    else:
+        stat = matches.group(1)
 
     if scenario == 'prism':
-        month = fn_parts[5].lstrip('0')
+        month = filename_parts[5].lstrip('0')
     else:
-        month = fn_parts[6].lstrip('0')
-        year = int(fn_parts[7])
+        month = filename_parts[6].lstrip('0')
+        year = int(filename_parts[7])
         if year < daterange[0] or year > daterange[1]:
             return []
 
-    with rasterio.open(fn) as rst:
+    with rasterio.open(filepath) as rst:
         arr = rst.read(1)
         data = []
         for index, community in communities.iterrows():
@@ -41,7 +49,8 @@ def extract_data(fn, communities, scenario, daterange):
             data.append({
                 'id': community['id'],
                 'month': month,
-                'value': value
+                'value': value,
+                'stat': stat
             })
 
     return data
@@ -65,13 +74,22 @@ def run_extraction(files, communities, scenario, resolution, type, daterange):
     for index, community in communities.iterrows():
         month_values[community['id']] = {}
         for month in months:
-            month_values[community['id']][str(month)] = []
+            month_values[community['id']][str(month)] = {
+                'mean': [],
+                'min': [],
+                'max': []
+            }
 
     for result in combined:
         community_id = result['id']
         month = str(result['month'])
         value = result['value']
-        month_values[community_id][month].append(value)
+        if result['stat'] == 'max':
+            month_values[community_id][month]['max'].append(value)
+        elif result['stat'] == 'min':
+            month_values[community_id][month]['min'].append(value)
+        else:
+            month_values[community_id][month]['mean'].append(value)
 
     for index, community in communities.iterrows():
         row = {
@@ -98,18 +116,29 @@ def run_extraction(files, communities, scenario, resolution, type, daterange):
             month_label_max = month_abbr + 'Max'
             month_label_mean = month_abbr + 'Mean'
             month_label_sd = month_abbr + 'Sd'
-            values = np.array(month_values[community['id']][str(month)])
 
-            if None in values:
+            mean_values = np.array(month_values[community['id']][str(month)]['mean'])
+            min_values = np.array(month_values[community['id']][str(month)]['min'])
+            max_values = np.array(month_values[community['id']][str(month)]['max'])
+
+            if None in mean_values:
                 row[month_label_min] = 'null'
                 row[month_label_mean] = 'null'
                 row[month_label_max] = 'null'
                 row[month_label_sd] = 'null'
-            elif len(values) > 0:
-                row[month_label_min] = values.min()
-                row[month_label_mean] = values.mean().round(1)
-                row[month_label_max] = values.max()
-                row[month_label_sd] = values.std().round(1)
+            elif len(mean_values) > 0:
+                row[month_label_mean] = mean_values.mean().round(1)
+
+                if len(min_values) > 0 and len(max_values) > 0:
+                    row[month_label_min] = min_values.min()
+                    row[month_label_max] = max_values.max()
+                    std_values = min_values + max_values
+                else:
+                    row[month_label_min] = mean_values.min()
+                    row[month_label_max] = mean_values.max()
+                    std_values = mean_values
+
+                row[month_label_sd] = std_values.std().round(1)
 
         results.append(row)
     return results
@@ -209,8 +238,15 @@ def process_resolutions(scenario, resolutions):
 
 def process_types(scenario, resolution, types):
     for type in types:
-        path = '{0}/{1}/{2}/'.format(scenario, resolution, type)
+        path = 'input/{0}/{1}/{2}/'.format(scenario, resolution, type)
         geotiffs = glob.glob(os.path.join(path, '*.tif'))
+
+        if luts.min_max_lu[scenario]:
+            min_path = 'input/{0}/{1}/{2}min/'.format(scenario, resolution, type)
+            max_path = 'input/{0}/{1}/{2}max/'.format(scenario, resolution, type)
+            geotiffs += glob.glob(os.path.join(min_path, '*.tif'))
+            geotiffs += glob.glob(os.path.join(max_path, '*.tif'))
+
         projection = luts.projections_lu[scenario]
         type_label = luts.types_lu[type]
         process_dateranges(scenario, resolution, type, type_label, luts.dateranges_lu[scenario], geotiffs)
@@ -229,7 +265,7 @@ def process_dateranges(scenario, resolution, type, type_label, dateranges, geoti
         keys = results[0].keys()
 
         for index, community in communities.iterrows():
-            filename = 'data/' + community['id'] + '.csv'
+            filename = 'output/' + community['id'] + '.csv'
             if not os.path.exists(filename):
                 create_csv(filename, keys)
 
