@@ -100,11 +100,3 @@ projections_lu = {
     'rcp60': 'EPSG:3338',
     'rcp85': 'EPSG:3338'
 }
-
-min_max_lu = {
-    'cru32': False,
-    'prism': False,
-    'rcp45': True,
-    'rcp60': True,
-    'rcp85': True
-}

@@ -241,11 +241,12 @@ def process_types(scenario, resolution, types):
         path = 'input/{0}/{1}/{2}/'.format(scenario, resolution, type)
         geotiffs = glob.glob(os.path.join(path, '*.tif'))
 
-        if luts.min_max_lu[scenario]:
-            min_path = 'input/{0}/{1}/{2}min/'.format(scenario, resolution, type)
-            max_path = 'input/{0}/{1}/{2}max/'.format(scenario, resolution, type)
-            geotiffs += glob.glob(os.path.join(min_path, '*.tif'))
-            geotiffs += glob.glob(os.path.join(max_path, '*.tif'))
+        # Look for min/max directories (e.g., tasmin/tasmax) if they exist.
+        # If they do not exist, no additional GeoTIFFs are added to the array.
+        min_path = 'input/{0}/{1}/{2}min/'.format(scenario, resolution, type)
+        max_path = 'input/{0}/{1}/{2}max/'.format(scenario, resolution, type)
+        geotiffs += glob.glob(os.path.join(min_path, '*.tif'))
+        geotiffs += glob.glob(os.path.join(max_path, '*.tif'))
 
         projection = luts.projections_lu[scenario]
         type_label = luts.types_lu[type]
