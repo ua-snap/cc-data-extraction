@@ -50,27 +50,21 @@ input
 │   │   └── tas
 │   └── 2km
 │       ├── pr
-│       ├── tas
-│       ├── tasmax
-│       └── tasmin
+│       └── tas
 ├── rcp60
 │   ├── 10min
 │   │   ├── pr
 │   │   └── tas
 │   └── 2km
 │       ├── pr
-│       ├── tas
-│       ├── tasmax
-│       └── tasmin
+│       └── tas
 └── rcp85
     ├── 10min
     │   ├── pr
     │   └── tas
     └── 2km
         ├── pr
-        ├── tas
-        ├── tasmax
-        └── tasmin
+        └── tas
 ```
 
 ## Run

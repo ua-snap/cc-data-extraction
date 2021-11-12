@@ -26,12 +26,6 @@ def extract_data(filepath, communities, scenario, daterange):
     filename = filepath.split('/')[-1]
     filename_prefix = filename.split('.')[0]
     filename_parts = filename_prefix.split('_')
-    matches = re.search(r'(min|max)', filename_parts[0])
-
-    if matches == None:
-        stat = 'mean'
-    else:
-        stat = matches.group(1)
 
     if scenario == 'prism':
         month = filename_parts[5].lstrip('0')
@@ -49,8 +43,7 @@ def extract_data(filepath, communities, scenario, daterange):
             data.append({
                 'id': community['id'],
                 'month': month,
-                'value': value,
-                'stat': stat
+                'value': value
             })
 
     return data
@@ -74,22 +67,13 @@ def run_extraction(files, communities, scenario, resolution, type, daterange):
     for index, community in communities.iterrows():
         month_values[community['id']] = {}
         for month in months:
-            month_values[community['id']][str(month)] = {
-                'mean': [],
-                'min': [],
-                'max': []
-            }
+            month_values[community['id']][str(month)] = []
 
     for result in combined:
         community_id = result['id']
         month = str(result['month'])
         value = result['value']
-        if result['stat'] == 'max':
-            month_values[community_id][month]['max'].append(value)
-        elif result['stat'] == 'min':
-            month_values[community_id][month]['min'].append(value)
-        else:
-            month_values[community_id][month]['mean'].append(value)
+        month_values[community_id][month].append(value)
 
     for index, community in communities.iterrows():
         row = {
@@ -113,31 +97,14 @@ def run_extraction(files, communities, scenario, resolution, type, daterange):
         data_exists = True
         for month in months:
             month_abbr = datetime.datetime.strptime(str(month), "%m").strftime("%b").lower()
-            month_label_min = month_abbr + 'Min'
-            month_label_max = month_abbr + 'Max'
             month_label_mean = month_abbr + 'Mean'
-            month_label_sd = month_abbr + 'Sd'
-
-            mean_values = np.array(month_values[community['id']][str(month)]['mean'])
-            min_values = np.array(month_values[community['id']][str(month)]['min'])
-            max_values = np.array(month_values[community['id']][str(month)]['max'])
+            mean_values = np.array(month_values[community['id']][str(month)])
 
             if None in mean_values:
                 data_exists = False
                 continue
             elif len(mean_values) > 0:
                 row[month_label_mean] = mean_values.mean().round(1)
-
-                if len(min_values) > 0 and len(max_values) > 0:
-                    row[month_label_min] = min_values.min()
-                    row[month_label_max] = max_values.max()
-                    std_values = min_values + max_values
-                else:
-                    row[month_label_min] = mean_values.min()
-                    row[month_label_max] = mean_values.max()
-                    std_values = mean_values
-
-                row[month_label_sd] = std_values.std().round(1)
 
         if data_exists:
             results.append(row)
@@ -241,14 +208,6 @@ def process_types(scenario, resolution, types):
     for type in types:
         path = 'input/{0}/{1}/{2}/'.format(scenario, resolution, type)
         geotiffs = glob.glob(os.path.join(path, '*.tif'))
-
-        # Look for min/max directories (e.g., tasmin/tasmax) if they exist.
-        # If they do not exist, no additional GeoTIFFs are added to the array.
-        min_path = 'input/{0}/{1}/{2}min/'.format(scenario, resolution, type)
-        max_path = 'input/{0}/{1}/{2}max/'.format(scenario, resolution, type)
-        geotiffs += glob.glob(os.path.join(min_path, '*.tif'))
-        geotiffs += glob.glob(os.path.join(max_path, '*.tif'))
-
         projection = luts.projections_lu[scenario]
         type_label = luts.types_lu[type]
         process_dateranges(scenario, resolution, type, type_label, luts.dateranges_lu[scenario], geotiffs)
