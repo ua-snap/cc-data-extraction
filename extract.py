@@ -293,12 +293,9 @@ def process_dateranges(scenario, resolution, type, type_label, dateranges, geoti
 
 if __name__ == '__main__':
     locations = luts.all_locations
-    communities = []
+    communities = {}
     for index, location in locations.iterrows():
-        communities.append({
-            'id': location['id'],
-            'name': location['name'] + ', ' + location['region']
-        })
+        communities[location['id']] = location['name'] + ', ' + location['region']
 
     # Output the file used to populate the web app community selector dropdown.
     community_file = open('CommunityNames.json', 'w')
