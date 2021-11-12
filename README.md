@@ -18,6 +18,9 @@ Clone this repository next to it:
 ```
 cd ~/repos
 git clone git@github.com:ua-snap/cc-data-extraction.git
+cd cc-data-extraction
+brew install proj
+pipenv install
 ```
 
 ### Input Data
@@ -70,5 +73,5 @@ input
 ## Run
 
 ```
-python3 ./extract.py
+pipenv run ./extract.py
 ```
