@@ -110,6 +110,7 @@ def run_extraction(files, communities, scenario, resolution, type, daterange):
         else:
             row['daterange'] = '{0}-{1}'.format(daterange[0], daterange[1])
 
+        data_exists = True
         for month in months:
             month_abbr = datetime.datetime.strptime(str(month), "%m").strftime("%b").lower()
             month_label_min = month_abbr + 'Min'
@@ -122,10 +123,8 @@ def run_extraction(files, communities, scenario, resolution, type, daterange):
             max_values = np.array(month_values[community['id']][str(month)]['max'])
 
             if None in mean_values:
-                row[month_label_min] = 'null'
-                row[month_label_mean] = 'null'
-                row[month_label_max] = 'null'
-                row[month_label_sd] = 'null'
+                data_exists = False
+                continue
             elif len(mean_values) > 0:
                 row[month_label_mean] = mean_values.mean().round(1)
 
@@ -140,7 +139,9 @@ def run_extraction(files, communities, scenario, resolution, type, daterange):
 
                 row[month_label_sd] = std_values.std().round(1)
 
-        results.append(row)
+        if data_exists:
+            results.append(row)
+
     return results
 
 def project(x, projection):
