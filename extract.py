@@ -24,7 +24,7 @@ def get_rowcol_from_point(x, y, transform):
     return row, col
 
 
-def extract_data(filepath, communities, scenario, daterange):
+def extract_data(filepath, communities, scenario, resolution, daterange):
     filename = filepath.split("/")[-1]
     filename_prefix = filename.split(".")[0]
     filename_parts = filename_prefix.split("_")
@@ -41,7 +41,7 @@ def extract_data(filepath, communities, scenario, daterange):
         arr = rst.read(1)
         data = []
         for index, community in communities.iterrows():
-            value = get_closest_value(arr, community)
+            value = get_closest_value(arr, community, scenario, resolution)
             data.append({"id": community["id"], "month": month, "value": value})
 
     return data
@@ -49,7 +49,7 @@ def extract_data(filepath, communities, scenario, daterange):
 
 def run_extraction(files, communities, scenario, resolution, type, daterange):
     f = partial(
-        extract_data, communities=communities, scenario=scenario, daterange=daterange
+        extract_data, communities=communities, scenario=scenario, resolution=resolution, daterange=daterange
     )
     pool = mp.Pool(8)
     extracted = pool.map(f, files)
@@ -132,7 +132,7 @@ def transform(x, meta):
     return x
 
 
-def get_closest_value(arr, community):
+def get_closest_value(arr, community, scenario, resolution):
     rowcol = community.loc["rowcol"]
     row = rowcol["row"]
     col = rowcol["col"]
@@ -147,7 +147,9 @@ def get_closest_value(arr, community):
     # TODO: Ignore the innermost set of checked points to optimize considerably.
     while np.isclose(value, -3.40e38) or np.isclose(value, -9999.0):
         distance += 1
-        if distance > 8:
+        if distance > 1:
+            log_vars = [scenario, resolution, type]
+            logging.error("No data available: {0}/{1}/{2}".format(*log_vars))
             return None
 
         checked_points = []
@@ -260,7 +262,6 @@ def process_dateranges(scenario, resolution, type, type_label, dateranges, geoti
                 output_file.close()
 
         log_vars = [scenario, resolution, type, daterange[0], daterange[1]]
-
         logging.info("Complete: {0}/{1}/{2}/{3}-{4}".format(*log_vars))
 
 
