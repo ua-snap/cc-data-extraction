@@ -198,7 +198,7 @@ def process_dataset(
 
 def process_scenarios(scenarios):
     for scenario in luts.scenarios_lu:
-        process_resolutions(scenario, luts.resolutions_lu[scenario])
+        process_resolutions(scenario, luts.resolutions_lu[scenario].keys())
 
 
 def process_resolutions(scenario, resolutions):
@@ -230,7 +230,7 @@ def create_csv(filename, keys):
 
 
 def process_dateranges(scenario, resolution, type, type_label, dateranges, geotiffs):
-    communities = luts.communities_lu[scenario]
+    communities = luts.resolutions_lu[scenario][resolution]
     projection = luts.projections_lu[scenario]
     for daterange in dateranges:
         results = process_dataset(

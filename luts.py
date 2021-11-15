@@ -21,34 +21,37 @@ saskatchewan = pd.read_csv(
 yukon = pd.read_csv(
     "../geospatial-vector-veracity/vector_data/point/yukon_point_locations.csv"
 )
-
+non_nwt = pd.concat(
+    [alaska, alberta, british_columbia, manitoba, saskatchewan, yukon]
+)
 all_locations = pd.concat(
     [alaska, alberta, british_columbia, manitoba, nwt, saskatchewan, yukon]
 )
 
-non_nwt_locations = pd.concat(
-    [alaska, alberta, british_columbia, manitoba, saskatchewan, yukon]
-)
-
 scenarios_lu = ["cru32", "prism", "rcp45", "rcp60", "rcp85"]
 
-communities_lu = {
-    "cru32": all_locations,
-    "prism": non_nwt_locations,
-    "rcp45": all_locations,
-    "rcp60": all_locations,
-    "rcp85": all_locations,
+resolutions_lu = {
+    "cru32": {
+        "10min": nwt,
+    },
+    "prism": {
+        "2km": non_nwt,
+    },
+    "rcp45": {
+        "10min": nwt,
+        "2km": non_nwt,
+    },
+    "rcp60": {
+        "10min": nwt,
+        "2km": non_nwt,
+    },
+    "rcp85": {
+        "10min": nwt,
+        "2km": non_nwt
+    }
 }
 
 types_lu = {"tas": "Temperature", "pr": "Precipitation"}
-
-resolutions_lu = {
-    "cru32": ["10min"],
-    "prism": ["2km"],
-    "rcp45": ["2km", "10min"],
-    "rcp60": ["2km", "10min"],
-    "rcp85": ["2km", "10min"],
-}
 
 dateranges_lu = {
     "cru32": [[1960, 1989]],
