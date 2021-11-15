@@ -122,12 +122,12 @@ def project(x, projection):
     return x
 
 
-def transform(x, meta, rowcol_offset):
+def transform(x, meta):
     lat = x["proj"]["lat"]
     lon = x["proj"]["lon"]
     row, col = get_rowcol_from_point(lon, lat, transform=meta["transform"])
 
-    x["rowcol"] = {"row": row + rowcol_offset, "col": col + rowcol_offset}
+    x["rowcol"] = {"row": row, "col": col}
 
     return x
 
@@ -188,13 +188,8 @@ def process_dataset(
         meta = tmp.meta
     communities = communities.apply(project, projection=projection, axis=1)
 
-    rowcol_offset = 0
-    if scenario in ["rcp45", "rcp60", "rcp85"]:
-        if resolution == "10min":
-            rowcol_offset = -1
-
     communities = communities.apply(
-        transform, meta=meta, rowcol_offset=rowcol_offset, axis=1
+        transform, meta=meta, axis=1
     )
     return run_extraction(
         geotiffs, communities, scenario, resolution, type_label, daterange
