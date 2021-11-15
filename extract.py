@@ -271,9 +271,10 @@ if __name__ == "__main__":
     for index, location in locations.iterrows():
         communities[location["id"]] = location["name"] + ", " + location["region"]
 
+    sorted_communities = dict(sorted(communities.items(), key=lambda x: x[1]))
     # Output the file used to populate the web app community selector dropdown.
     community_file = open("CommunityNames.json", "w")
-    json.dump(communities, community_file)
+    json.dump(sorted_communities, community_file)
     community_file.close()
 
     # Process each scenario with its resolution, type, and daterang permutations
