@@ -49,7 +49,11 @@ def extract_data(filepath, communities, scenario, resolution, daterange):
 
 def run_extraction(files, communities, scenario, resolution, type, daterange):
     f = partial(
-        extract_data, communities=communities, scenario=scenario, resolution=resolution, daterange=daterange
+        extract_data,
+        communities=communities,
+        scenario=scenario,
+        resolution=resolution,
+        daterange=daterange,
     )
     pool = mp.Pool(8)
     extracted = pool.map(f, files)
@@ -190,9 +194,7 @@ def process_dataset(
         meta = tmp.meta
     communities = communities.apply(project, projection=projection, axis=1)
 
-    communities = communities.apply(
-        transform, meta=meta, axis=1
-    )
+    communities = communities.apply(transform, meta=meta, axis=1)
     return run_extraction(
         geotiffs, communities, scenario, resolution, type_label, daterange
     )
@@ -271,8 +273,8 @@ if __name__ == "__main__":
     for index, location in locations.iterrows():
         communities[location["id"]] = location["name"] + ", " + location["region"]
 
-    sorted_communities = dict(sorted(communities.items(), key=lambda x: x[1]))
     # Output the file used to populate the web app community selector dropdown.
+    sorted_communities = dict(sorted(communities.items(), key=lambda x: x[1]))
     community_file = open("CommunityNames.json", "w")
     json.dump(sorted_communities, community_file)
     community_file.close()

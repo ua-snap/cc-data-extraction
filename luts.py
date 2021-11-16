@@ -21,9 +21,7 @@ saskatchewan = pd.read_csv(
 yukon = pd.read_csv(
     "../geospatial-vector-veracity/vector_data/point/yukon_point_locations.csv"
 )
-non_nwt = pd.concat(
-    [alaska, alberta, british_columbia, manitoba, saskatchewan, yukon]
-)
+non_nwt = pd.concat([alaska, alberta, british_columbia, manitoba, saskatchewan, yukon])
 all_locations = pd.concat(
     [alaska, alberta, british_columbia, manitoba, nwt, saskatchewan, yukon]
 )
@@ -45,10 +43,7 @@ resolutions_lu = {
         "10min": nwt,
         "2km": non_nwt,
     },
-    "rcp85": {
-        "10min": nwt,
-        "2km": non_nwt
-    }
+    "rcp85": {"10min": nwt, "2km": non_nwt},
 }
 
 types_lu = {"tas": "Temperature", "pr": "Precipitation"}
