@@ -49,7 +49,7 @@ resolutions_lu = {
 types_lu = {"tas": "Temperature", "pr": "Precipitation"}
 
 dateranges_lu = {
-    "cru32": [[1960, 1989]],
+    "cru32": [[1961, 1990]],
     "prism": [[1961, 1990]],
     "rcp45": [[2040, 2049], [2060, 2069], [2090, 2099]],
     "rcp60": [[2040, 2049], [2060, 2069], [2090, 2099]],
