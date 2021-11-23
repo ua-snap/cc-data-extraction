@@ -17,6 +17,8 @@ import luts
 
 logging.basicConfig(level=logging.INFO)
 processes = 8
+output_dir = "output"
+csv_output_dir = output_dir + "/csv"
 community_name_file = "CommunityNames.json"
 max_grid_distance = 1
 
@@ -291,7 +293,7 @@ def process_dateranges(scenario, resolution, type, type_label, dateranges, geoti
         keys = results[0].keys()
 
         for index, community in communities.iterrows():
-            filename = "output/" + community["id"] + ".csv"
+            filename = csv_output_dir + "/" + community["id"] + ".csv"
             if not os.path.exists(filename):
                 create_csv(filename, keys)
 
@@ -310,13 +312,18 @@ def process_dateranges(scenario, resolution, type, type_label, dateranges, geoti
 
 
 if __name__ == "__main__":
+    # Create output directories if they do not exist.
+    for dir in [output_dir, csv_output_dir]:
+        if not os.path.exists(dir):
+            os.makedirs(dir)
+
     # Output the file used to populate the web app community selector dropdown.
     locations = luts.all_locations
     communities = {}
     for index, location in locations.iterrows():
         communities[location["id"]] = location["name"] + ", " + location["region"]
     sorted_communities = dict(sorted(communities.items(), key=lambda x: x[1]))
-    community_file = open(community_name_file, "w")
+    community_file = open(output_dir + "/" + community_name_file, "w")
     json.dump(sorted_communities, community_file)
     community_file.close()
 
