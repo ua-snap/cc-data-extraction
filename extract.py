@@ -321,10 +321,13 @@ if __name__ == "__main__":
     locations = luts.all_locations
     communities = {}
     for index, location in locations.iterrows():
-        communities[location["id"]] = location["name"] + ", " + location["region"]
-    sorted_communities = dict(sorted(communities.items(), key=lambda x: x[1]))
+        community = {"name": location["name"], "region": location["region"]}
+        if location["alt_name"] != "":
+            community["alt_name"] = location["alt_name"]
+        communities[location["id"]] = community
+    sorted_communities = dict(sorted(communities.items(), key=lambda x: x[1]["name"]))
     community_file = open(output_dir + "/" + community_name_file, "w")
-    json.dump(sorted_communities, community_file)
+    json.dump(sorted_communities, community_file, indent=2)
     community_file.close()
 
     # Process each scenario with its resolution, type, and daterang permutations

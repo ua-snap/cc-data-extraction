@@ -1,25 +1,32 @@
 import pandas as pd
 
 alaska = pd.read_csv(
-    "../geospatial-vector-veracity/vector_data/point/alaska_point_locations.csv"
+    "../geospatial-vector-veracity/vector_data/point/alaska_point_locations.csv",
+    keep_default_na=False,
 )
 alberta = pd.read_csv(
-    "../geospatial-vector-veracity/vector_data/point/alberta_point_locations.csv"
+    "../geospatial-vector-veracity/vector_data/point/alberta_point_locations.csv",
+    keep_default_na=False,
 )
 british_columbia = pd.read_csv(
-    "../geospatial-vector-veracity/vector_data/point/british_columbia_point_locations.csv"
+    "../geospatial-vector-veracity/vector_data/point/british_columbia_point_locations.csv",
+    keep_default_na=False,
 )
 manitoba = pd.read_csv(
-    "../geospatial-vector-veracity/vector_data/point/manitoba_point_locations.csv"
+    "../geospatial-vector-veracity/vector_data/point/manitoba_point_locations.csv",
+    keep_default_na=False,
 )
 nwt = pd.read_csv(
-    "../geospatial-vector-veracity/vector_data/point/northwest_territories_point_locations.csv"
+    "../geospatial-vector-veracity/vector_data/point/northwest_territories_point_locations.csv",
+    keep_default_na=False,
 )
 saskatchewan = pd.read_csv(
-    "../geospatial-vector-veracity/vector_data/point/saskatchewan_point_locations.csv"
+    "../geospatial-vector-veracity/vector_data/point/saskatchewan_point_locations.csv",
+    keep_default_na=False,
 )
 yukon = pd.read_csv(
-    "../geospatial-vector-veracity/vector_data/point/yukon_point_locations.csv"
+    "../geospatial-vector-veracity/vector_data/point/yukon_point_locations.csv",
+    keep_default_na=False,
 )
 non_nwt = pd.concat([alaska, alberta, british_columbia, manitoba, saskatchewan, yukon])
 all_locations = pd.concat(
