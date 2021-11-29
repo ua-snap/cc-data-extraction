@@ -35,6 +35,8 @@ The extract.py script depends on the following datasets:
 - [Projected Monthly Temperature Products - 10 min CMIP5/AR5](http://ckan.snap.uaf.edu/dataset/projected-monthly-temperature-products-10-min-cmip5-ar5)
 - [Projected Monthly Precipitation Products - 10 min CMIP5/AR5](http://ckan.snap.uaf.edu/dataset/projected-monthly-precipitation-products-10-min-cmip5-ar5)
 
+For the projected datasets, this script uses only the 5-model average. There is no need to download projected data for individual models.
+
 These datasets need to be extracted into an `input` subdirectory with the following structure:
 
 ```
