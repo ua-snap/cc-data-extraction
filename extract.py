@@ -127,7 +127,11 @@ def run_extraction(files, communities, scenario, resolution, type, daterange):
                 data_exists = False
                 continue
             elif len(mean_values) > 0:
-                row[month_label_mean] = mean_values.mean().round(1)
+                month_mean = mean_values.mean()
+                if type == "Temperature":
+                    row[month_label_mean] = month_mean.round(1)
+                elif type == "Precipitation":
+                    row[month_label_mean] = int(month_mean.round())
 
         # If the value for any month is missing for a particular combination of
         # community/scenario/type/resolution/daterange, omit the entire row from
