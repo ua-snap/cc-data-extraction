@@ -114,7 +114,7 @@ def run_extraction(files, communities, scenario, resolution, type, daterange):
         elif type == "Precipitation":
             row["unit"] = "mm"
 
-        if scenario in ["cru32", "prism"]:
+        if scenario in ["cru322", "prism"]:
             row["daterange"] = "Historical"
         else:
             row["daterange"] = "{0}-{1}".format(daterange[0], daterange[1])

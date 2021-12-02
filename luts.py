@@ -33,10 +33,10 @@ all_locations = pd.concat(
     [alaska, alberta, british_columbia, manitoba, nwt, saskatchewan, yukon]
 )
 
-scenarios_lu = ["cru32", "prism", "rcp45", "rcp60", "rcp85"]
+scenarios_lu = ["cru322", "prism", "rcp45", "rcp60", "rcp85"]
 
 resolutions_lu = {
-    "cru32": {
+    "cru322": {
         "10min": nwt,
     },
     "prism": {
@@ -56,7 +56,7 @@ resolutions_lu = {
 types_lu = {"tas": "Temperature", "pr": "Precipitation"}
 
 dateranges_lu = {
-    "cru32": [[1961, 1990]],
+    "cru322": [[1961, 1990]],
     "prism": [[1961, 1990]],
     "rcp45": [[2030, 2039], [2060, 2069], [2090, 2099]],
     "rcp60": [[2030, 2039], [2060, 2069], [2090, 2099]],
@@ -64,7 +64,7 @@ dateranges_lu = {
 }
 
 projections_lu = {
-    "cru32": "EPSG:4326",
+    "cru322": "EPSG:4326",
     "prism": "EPSG:3338",
     "rcp45": "EPSG:3338",
     "rcp60": "EPSG:3338",

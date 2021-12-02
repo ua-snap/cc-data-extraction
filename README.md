@@ -41,7 +41,7 @@ These datasets need to be extracted into an `input` subdirectory with the follow
 
 ```
 input
-├── cru32
+├── cru322
 │   └── 10min
 │       ├── pr
 │       └── tas
