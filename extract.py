@@ -107,8 +107,12 @@ def run_extraction(files, communities, scenario, resolution, type, daterange):
             "type": type,
             "scenario": scenario,
             "resolution": resolution,
-            "unit": "C",
         }
+
+        if type == "Temperature":
+            row["unit"] = "C"
+        elif type == "Precipitation":
+            row["unit"] = "mm"
 
         if scenario in ["cru32", "prism"]:
             row["daterange"] = "Historical"
