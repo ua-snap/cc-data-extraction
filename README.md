@@ -1,6 +1,6 @@
 # cc-data-extraction
 
-This script is a work in progress and not ready for production.
+This script extracts temperature and precipitation values from historical and projected raster data for use with the [Community Climate Charts](https://snap.uaf.edu/tools/community-charts) web application.
 
 ## Setup
 
@@ -77,3 +77,8 @@ input
 ```
 pipenv run ./extract.py
 ```
+
+The script will output the following files for use with the [Community Climate Charts web application](https://github.com/ua-snap/dash-cc):
+
+* `CommunityNames.json`: Used to populate the community selector dropdown menu.
+* `csv/*.csv`: CSV files containing historical and projected temperature and precipitation values for each community.
