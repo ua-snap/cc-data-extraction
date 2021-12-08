@@ -1,3 +1,4 @@
+"""Settings for extract.py script"""
 import pandas as pd
 
 alaska = pd.read_csv(
@@ -53,7 +54,7 @@ resolutions_lu = {
     "rcp85": {"10min": nwt, "2km": non_nwt},
 }
 
-types_lu = {"tas": "Temperature", "pr": "Precipitation"}
+variables_lu = {"tas": "Temperature", "pr": "Precipitation"}
 
 dateranges_lu = {
     "cru322": [[1961, 1990]],
