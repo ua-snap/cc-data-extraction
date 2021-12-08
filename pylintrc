@@ -1,0 +1,7 @@
+[MESSAGES CONTROL]
+#disable=C0114,C0116,E1136,W0511,W0621
+disable=E1136,W0511,W0621
+
+[FORMAT]
+good-names=x,y
+max-args=6
