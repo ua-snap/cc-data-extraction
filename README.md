@@ -41,35 +41,41 @@ These datasets need to be extracted into an `input` subdirectory with the follow
 
 ```
 input
-├── cru322
-│   └── 10min
-│       ├── pr
-│       └── tas
+├── cru32
+│   └── 10min
+│       ├── pr
+│       └── tas
 ├── prism
-│   └── 2km
-│       ├── pr
-│       └── tas
+│   └── 2km
+│       ├── pr
+│       └── tas
 ├── rcp45
-│   ├── 10min
-│   │   ├── pr
-│   │   └── tas
-│   └── 2km
-│       ├── pr
-│       └── tas
+│   ├── 10min
+│   │   ├── pr
+│   │   └── tas
+│   └── 2km
+│       ├── pr
+│       ├── tas
+│       ├── tasmax
+│       └── tasmin
 ├── rcp60
-│   ├── 10min
-│   │   ├── pr
-│   │   └── tas
-│   └── 2km
-│       ├── pr
-│       └── tas
+│   ├── 10min
+│   │   ├── pr
+│   │   └── tas
+│   └── 2km
+│       ├── pr
+│       ├── tas
+│       ├── tasmax
+│       └── tasmin
 └── rcp85
     ├── 10min
-    │   ├── pr
-    │   └── tas
+    │   ├── pr
+    │   └── tas
     └── 2km
         ├── pr
-        └── tas
+        ├── tas
+        ├── tasmax
+        └── tasmin
 ```
 
 ## Run

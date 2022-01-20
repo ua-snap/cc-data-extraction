@@ -5,3 +5,4 @@ disable=E1136,W0511,W0621
 [FORMAT]
 good-names=x,y
 max-args=6
+max-locals=20

@@ -4,6 +4,7 @@ import datetime
 import csv
 import json
 import glob
+import re
 import os
 import os.path
 import logging
@@ -35,6 +36,12 @@ def extract_data(filepath, communities, scenario, daterange):
     filename = filepath.split("/")[-1]
     filename_prefix = filename.split(".")[0]
     filename_parts = filename_prefix.split("_")
+    matches = re.search(r"(min|max)", filename_parts[0])
+
+    if matches is None:
+        stat = "mean"
+    else:
+        stat = matches.group(1)
 
     # PRISM GeoTIFFs are an average from 1961-1990, not separated by year.
     # For other GeoTIFFs, make sure we are processing the correct year range.
@@ -53,7 +60,9 @@ def extract_data(filepath, communities, scenario, daterange):
         data = []
         for _, community in communities.iterrows():
             value = get_closest_value(arr, community, scenario)
-            data.append({"id": community["id"], "month": month, "value": value})
+            data.append(
+                {"id": community["id"], "month": month, "value": value, "stat": stat}
+            )
 
     return data
 
@@ -96,7 +105,11 @@ def compile_results(
     for _, community in communities.iterrows():
         month_values[community["id"]] = {}
         for month in MONTHS:
-            month_values[community["id"]][str(month)] = []
+            month_values[community["id"]][str(month)] = {
+                "mean": [],
+                "min": [],
+                "max": [],
+            }
 
     # Populate each community/month combo array with values. These values
     # are either the annual temperature or precipitation values for this month.
@@ -104,7 +117,12 @@ def compile_results(
         community_id = result["id"]
         month = str(result["month"])
         value = result["value"]
-        month_values[community_id][month].append(value)
+        if result["stat"] == "max":
+            month_values[community_id][month]["max"].append(value)
+        elif result["stat"] == "min":
+            month_values[community_id][month]["min"].append(value)
+        else:
+            month_values[community_id][month]["mean"].append(value)
 
     for _, community in communities.iterrows():
         # Each field of the "row" dict represents a CSV file column.
@@ -140,7 +158,12 @@ def populate_data(community, month_values, row, variable):
     for month in MONTHS:
         month_abbr = datetime.datetime.strptime(str(month), "%m").strftime("%b").lower()
         month_label_mean = month_abbr + "Mean"
-        mean_values = np.array(month_values[community["id"]][str(month)])
+        month_label_min = month_abbr + "Min"
+        month_label_max = month_abbr + "Max"
+
+        mean_values = np.array(month_values[community["id"]][str(month)]["mean"])
+        min_values = np.array(month_values[community["id"]][str(month)]["min"])
+        max_values = np.array(month_values[community["id"]][str(month)]["max"])
 
         if None in mean_values:
             data_exists = False
@@ -149,9 +172,22 @@ def populate_data(community, month_values, row, variable):
         if len(mean_values) > 0:
             month_mean = mean_values.mean()
             if variable == "Temperature":
+                if len(min_values) > 0:
+                    row[month_label_min] = min_values.min().round(1)
+                else:
+                    row[month_label_min] = ""
+
                 row[month_label_mean] = month_mean.round(1)
+
+                if len(max_values) > 0:
+                    row[month_label_max] = max_values.min().round(1)
+                else:
+                    row[month_label_max] = ""
+
             elif variable == "Precipitation":
+                row[month_label_min] = ""
                 row[month_label_mean] = int(month_mean.round())
+                row[month_label_max] = ""
 
     if data_exists:
         return row
@@ -309,6 +345,13 @@ def process_variables(scenario, resolution):
         # Expected GeoTIFF paths are explained in README.
         path = "input/{0}/{1}/{2}/".format(scenario, resolution, variable)
         geotiffs = glob.glob(os.path.join(path, "*.tif"))
+
+        if variable == "tas":
+            path = "input/{0}/{1}/tasmin/".format(scenario, resolution)
+            geotiffs += glob.glob(os.path.join(path, "*.tif"))
+
+            path = "input/{0}/{1}/tasmax/".format(scenario, resolution)
+            geotiffs += glob.glob(os.path.join(path, "*.tif"))
 
         process_dateranges(
             scenario,
