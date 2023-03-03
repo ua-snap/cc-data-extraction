@@ -23,6 +23,14 @@ COMMUNITY_NAME_FILE = "CommunityNames.json"
 MAX_GRID_DISTANCE = 1
 MONTHS = range(1, 13)
 
+CSV_METADATA = """# Location: {location}
+# RCP scenario values represent different projected global emission scenarios based on possible human behavior. CRU 3.22 and PRISM are historical datasets.
+# Mean monthly values are the average for a given month across all five models and all ten years in the decade.
+# Min values represent the coolest year in the decade for a given month for the average of the five models.
+# Max values represent the warmest year in the decade for a given month for the average of the five models.
+"""
+
+
 # Transform coordinates into grid position using affine read from GeoTIFF.
 def get_rowcol_from_point(x, y, transform):
     """Transform projected lat/lon coordinate using GeoTIFF's affine"""
@@ -363,9 +371,14 @@ def process_variables(scenario, resolution):
 
 # Results are appended to CSV files in chunks to free up memory. Create each CSV
 # file with its header row before appending data to it.
-def create_csv(filename, keys):
-    """Create new CSV files with header row, append results later"""
+def create_csv(filename, community, keys):
+    """Create CSV files with metadata and header rows, append results later"""
+    location = community["name"]
+    if community["alt_name"]:
+        location += " (" + community["alt_name"] + ")"
+    metadata = CSV_METADATA.format(location=location)
     with open(filename, "a", newline="") as output_file:
+        output_file.write(metadata)
         dict_writer = csv.DictWriter(output_file, keys)
         dict_writer.writeheader()
         output_file.close()
@@ -397,7 +410,7 @@ def populate_csvs(results, communities):
     for _, community in communities.iterrows():
         filename = CSV_OUTPUT_DIR + "/" + community["id"] + ".csv"
         if not os.path.exists(filename):
-            create_csv(filename, keys)
+            create_csv(filename, community, keys)
 
         data = []
         for result in results:
