@@ -180,7 +180,7 @@ def populate_data(community, month_values, row, variable):
                 row[month_label_mean] = month_mean.round(1)
 
                 if len(max_values) > 0:
-                    row[month_label_max] = max_values.min().round(1)
+                    row[month_label_max] = max_values.max().round(1)
                 else:
                     row[month_label_max] = ""
 
