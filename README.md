@@ -37,6 +37,8 @@ The extract.py script depends on the following datasets:
 
 For the projected datasets, this script uses only the 5-model average. There is no need to download projected data for individual models.
 
+In addition to mean temperature, min/max projected temperature data is availabe at 2km resolution from the "Projected Monthly and Derived Temperature Products - 2km CMIP5/AR5" dataset linked above. For that dataset, download the `tasmin*` and `tasmax*` 5modelAvg ZIP files in addition to the `tas_mean*` 5modelAvg ZIP files, and extract them into their corresponding `tasmin` and `tasmax` subdirectories shown in the directory tree below.
+
 These datasets need to be extracted into an `input` subdirectory with the following structure:
 
 ```
